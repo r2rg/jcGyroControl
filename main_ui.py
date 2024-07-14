@@ -1,11 +1,13 @@
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout,
                              QWidget, QPushButton, QComboBox, QLabel)
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import QThread, pyqtSlot, pyqtSignal
 from main import motion_controls
 import sys
 
 
 class WorkerThread(QThread):
+    status_signal = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -13,6 +15,7 @@ class WorkerThread(QThread):
         with open('config.txt', 'r') as file:
             directions = file.read().split('\n')[:4]
         motion_controls(directions)
+        self.status_signal.emit("Not connected.")
         self.quit()
 
 
@@ -57,7 +60,7 @@ class MainWindow(QMainWindow):
 
     def on_button_clicked(self):
         directions = [combo.currentText() for combo in self.comboBoxes]
-        with open("config.txt", "w") as file:
+        with open("config.txt", "w"):
             pass
         with open("config.txt", "w") as file:
             for element in directions:
@@ -67,7 +70,8 @@ class MainWindow(QMainWindow):
             print('Executing')
             self.thread = WorkerThread(self)
             self.thread.start()
-            self.statusLabel.setText('Connected.')
+            self.thread.status_signal.connect(self.update_status_label)
+            self.update_status_label('Connected.')
         except WindowsError:
             print('Err')
             sys.exit(app.exec())
@@ -75,6 +79,10 @@ class MainWindow(QMainWindow):
     def process_finished(self):
         print("Process finished.")
         self.p = None
+
+    @pyqtSlot(str)
+    def update_status_label(self, message):
+        self.statusLabel.setText(message)
 
 
 if __name__ == "__main__":
