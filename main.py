@@ -1,6 +1,7 @@
+import sys
+
 import pyautogui
 import pyjoycon
-import time
 
 
 class MyJoyCon(
@@ -10,14 +11,39 @@ class MyJoyCon(
     pass
 
 
-def motion_controls(inputs: list):
-    joycon_id = pyjoycon.get_L_id()
-    joycon = MyJoyCon(*joycon_id)
-    toggle = False
-    running = True
-    sensitivity = 500
+def connect_joycon(hand: str):
+    joycon = None
+    if hand == 'L':
+        try:
+            joycon_id = pyjoycon.get_L_id()
+            joycon = MyJoyCon(*joycon_id)
+        except ValueError:
+            print('JoyConL Not found.')
+    else:
+        joycon_id = pyjoycon.get_R_id()
+        joycon = MyJoyCon(*joycon_id)
+    return joycon
 
-    while running:
+
+def inputs_list(inputs: list):
+    usable_inputs: list
+    if inputs[0] == 0:
+        usable_inputs = ["up", "right", "down", "left"]
+    else:
+        usable_inputs = ["a", "b", "y", "x"]
+
+    return usable_inputs
+
+
+def motion_controls(inputs: list):
+    joycon = connect_joycon(inputs[0])
+
+    toggle = True
+    sensitivity = 1000
+
+    inputs = inputs_list(inputs)
+
+    while True:
         # Log joycon directional inputs
         print("\r" + "joycon pointer:", joycon.pointer, end='')
 
@@ -34,11 +60,10 @@ def motion_controls(inputs: list):
                 # Click
                 if event_type == inputs[0]:
                     pyautogui.click()
-                    time.sleep(0.02)
                 # Finishes the program
                 elif event_type == inputs[1]:
                     print('Exit')
-                    running = False if running else True
+                    sys.exit()
                 # Reset position
                 elif event_type == inputs[2]:
                     print('Pointer reset')
@@ -51,4 +76,4 @@ def motion_controls(inputs: list):
 
 
 if __name__ == '__main__':
-    motion_controls(['up', 'right', 'down', 'left'])
+    motion_controls([1, 0, 1, 2, 3])
